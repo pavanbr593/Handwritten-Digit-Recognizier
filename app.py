@@ -34,7 +34,11 @@ def preprocess_image(image):
     image = ImageOps.invert(image)  # Invert colors
     image = image.resize((28, 28))  # Resize to match MNIST dataset
     image = np.array(image).astype(np.float32) / 255.0  # Normalize
-    image = image.flatten().reshape(1, -1)  # Flatten for model
+
+    # Debugging: Show the processed image
+    st.image(image, caption="Preprocessed Image", width=100)
+
+    image = image.reshape(1, -1)  # Flatten for model
     return image
 
 # Predict Button
@@ -43,10 +47,12 @@ if st.button("Predict Digit"):
         # Convert drawn image to PIL
         image = Image.fromarray((canvas_result.image_data[:, :, :3] * 255).astype(np.uint8))
         processed_image = preprocess_image(image)
-        
+
         # Run inference
         prediction = model.predict(processed_image)[0]
+        st.subheader(f"🧠 AI Prediction: {int(prediction)}")  # Ensure integer output
 
-        st.subheader(f"🧠 AI Prediction: {prediction}")
+        # Debugging: Print the raw prediction
+        print(f"Raw model output: {prediction}")
     else:
         st.warning("Please draw a digit first!")

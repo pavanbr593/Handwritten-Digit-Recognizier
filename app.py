@@ -1,58 +1,33 @@
-import streamlit as st
 import numpy as np
-import joblib
-from PIL import Image, ImageOps
 import cv2
-from streamlit_drawable_canvas import st_canvas
+from PIL import Image, ImageOps
+import streamlit as st
 
-# Load trained model
-@st.cache_resource
-def load_model():
-    return joblib.load("model/digit_model.pkl")
+st.set_page_config(page_title="Handwritten Digit Recognition", layout="centered")
 
-model = load_model()
-
-# Streamlit UI
-st.title("📝 Handwritten Digit Recognition ✨")
-st.write("Draw a digit (0-9) and the AI will recognize it!")
-
-# Create a canvas for drawing
-canvas_result = st_canvas(
-    fill_color="black",
-    stroke_width=10,
-    stroke_color="white",
-    background_color="black",
-    width=280,
-    height=280,
-    drawing_mode="freedraw",
-    key="canvas"
-)
 
 def preprocess_image(image):
-    """Preprocess drawn image for model prediction."""
-    image = image.convert("L")  # Convert to grayscale
-    image = ImageOps.invert(image)  # Invert colors
-    image = image.resize((28, 28))  # Resize to match MNIST dataset
-    image = np.array(image).astype(np.float32) / 255.0  # Normalize
+    """Preprocess the drawn image for model prediction."""
+    
+    # Convert image to grayscale
+    image = image.convert("L")
+    
+    # Invert colors (ensure white digit on black background)
+    image = ImageOps.invert(image)
+    
+    # Resize to 28x28 (same as MNIST dataset)
+    image = image.resize((28, 28), Image.Resampling.LANCZOS)
+    
+    # Convert to NumPy array
+    image = np.array(image).astype(np.uint8)
+    
+    # Apply Gaussian blur to smooth edges
+    image = cv2.GaussianBlur(image, (3, 3), 0)
 
-    # Debugging: Show the processed image
-    st.image(image, caption="Preprocessed Image", width=100)
-
-    image = image.reshape(1, -1)  # Flatten for model
+    # Normalize pixel values to range [0, 1]
+    image = image / 255.0
+    
+    # Flatten the image (convert to 1D array)
+    image = image.flatten().reshape(1, -1)
+    
     return image
-
-# Predict Button
-if st.button("Predict Digit"):
-    if canvas_result.image_data is not None:
-        # Convert drawn image to PIL
-        image = Image.fromarray((canvas_result.image_data[:, :, :3] * 255).astype(np.uint8))
-        processed_image = preprocess_image(image)
-
-        # Run inference
-        prediction = model.predict(processed_image)[0]
-        st.subheader(f"🧠 AI Prediction: {int(prediction)}")  # Ensure integer output
-
-        # Debugging: Print the raw prediction
-        print(f"Raw model output: {prediction}")
-    else:
-        st.warning("Please draw a digit first!")

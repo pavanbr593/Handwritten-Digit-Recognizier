@@ -1,8 +1,5 @@
-numpy
-scikit-learn
-joblib
-openml
 streamlit
+opencv-python-headless
+numpy
 pillow
-opencv-python
-streamlit-drawable-canvas
+joblib
